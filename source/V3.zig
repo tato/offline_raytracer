@@ -123,3 +123,10 @@ pub inline fn isNearZero(v: V3) bool {
 pub fn reflect(v: V3, n: V3) V3 {
     return v.sub(n.scale(2 * v.dot(n)));
 }
+
+pub fn refract(uv: V3, n: V3, etai_over_etat: f64) V3 {
+    const cos_theta = @minimum(uv.neg().dot(n), 1.0);
+    const r_out_perp = uv.add(n.scale(cos_theta)).scale(etai_over_etat);
+    const r_out_parallel = n.scale(-@sqrt(@fabs(1.0 - r_out_perp.lengthSquared())));
+    return r_out_perp.add(r_out_parallel);
+}

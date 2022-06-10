@@ -8,6 +8,7 @@ const Material = @This();
 const Storage = union(enum) {
     lambertian: Lambertian,
     metal: Metal,
+    dielectric: Dielectric,
 };
 
 storage: Storage,
@@ -20,10 +21,15 @@ pub fn initMetal(albedo: V3, fuzz: f64) Material {
     return .{ .storage = .{ .metal = .{ .albedo = albedo, .fuzz = fuzz } } };
 }
 
+pub fn initDielectric(ir: f64) Material {
+    return .{ .storage = .{ .dielectric = .{ .ir = ir } } };
+}
+
 pub fn scatter(mat: Material, ray: Ray, rec: HitRecord, rand: std.rand.Random) ?ScatterResult {
     return switch (mat.storage) {
         .lambertian => mat.storage.lambertian.scatter(ray, rec, rand),
         .metal => mat.storage.metal.scatter(ray, rec, rand),
+        .dielectric => mat.storage.dielectric.scatter(ray, rec, rand),
     };
 }
 
@@ -61,5 +67,39 @@ const Metal = struct {
             ScatterResult{ .scattered = scattered, .attenuation = mat.albedo }
         else
             null;
+    }
+};
+
+const Dielectric = struct {
+    ir: f64,
+
+    pub fn scatter(mat: Dielectric, ray: Ray, rec: HitRecord, r: std.rand.Random) ?ScatterResult {
+        const attenuation = V3.init(1.0, 1.0, 1.0);
+        const refraction_ratio = if (rec.front_face) 1.0 / mat.ir else mat.ir;
+
+        const unit_direction = ray.direction.normalize();
+
+        const cos_theta = @minimum(unit_direction.neg().dot(rec.normal), 1.0);
+        const sin_theta = @sqrt(1.0 - cos_theta * cos_theta);
+
+        const cannot_refract = refraction_ratio * sin_theta > 1.0;
+        const should_reflect = cannot_refract or reflectance(cos_theta, refraction_ratio) > r.float(f64);
+
+        const direction = if (should_reflect)
+            unit_direction.reflect(rec.normal)
+        else
+            unit_direction.refract(rec.normal, refraction_ratio);
+
+        return ScatterResult{
+            .attenuation = attenuation,
+            .scattered = Ray.init(rec.point, direction),
+        };
+    }
+
+    fn reflectance(cosine: f64, ref_idx: f64) f64 {
+        // Schlick approximation
+        var r0 = (1 - ref_idx) / (1 + ref_idx);
+        r0 = r0 * r0;
+        return r0 + (1 - r0) * std.math.pow(f64, (1 - cosine), 5);
     }
 };
