@@ -9,7 +9,6 @@ const Ray = @import("Ray.zig");
 const Camera = @import("Camera.zig");
 const Material = @import("material.zig").Material;
 const Sphere = @import("Sphere.zig");
-const Hittable = @import("hittable.zig").Hittable;
 const HittableList = @import("HittableList.zig");
 
 // Image
@@ -31,10 +30,10 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
     const material_right = Material.initMetal(V3.init(0.8, 0.6, 0.2));
 
     // zig fmt: off
-    try world.add(Hittable.init(Sphere.init(V3.init( 0.0, -100.5, -1), 100.0, &material_ground)));
-    try world.add(Hittable.init(Sphere.init(V3.init( 0.0,    0.0, -1),   0.5, &material_center)));
-    try world.add(Hittable.init(Sphere.init(V3.init(-1.0,    0.0, -1),   0.5, &material_left)));
-    try world.add(Hittable.init(Sphere.init(V3.init( 1.0,    0.0, -1),   0.5, &material_right)));
+    try world.add(Sphere.init(V3.init( 0.0, -100.5, -1), 100.0, &material_ground));
+    try world.add(Sphere.init(V3.init( 0.0,    0.0, -1),   0.5, &material_center));
+    try world.add(Sphere.init(V3.init(-1.0,    0.0, -1),   0.5, &material_left));
+    try world.add(Sphere.init(V3.init( 1.0,    0.0, -1),   0.5, &material_right));
     // zig fmt: on
 
     // Camera
@@ -56,7 +55,7 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
                 const u = (@intToFloat(f64, x) + random.float(f64)) / @as(f64, image_width - 1);
                 const v = (@intToFloat(f64, y) + random.float(f64)) / @as(f64, image_height - 1);
                 const r = cam.getRay(u, v);
-                pixel_color = pixel_color.add(rayColor(r, Hittable.init(world), max_depth));
+                pixel_color = pixel_color.add(rayColor(r, world, max_depth));
             }
 
             try writeColor(output_ppm, pixel_color, samples_per_pixel);
@@ -64,7 +63,7 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
     }
 }
 
-fn rayColor(ray: Ray, world: Hittable, depth: i32) V3 {
+fn rayColor(ray: Ray, world: anytype, depth: i32) V3 {
     if (depth <= 0) return V3.init(0, 0, 0);
 
     if (world.hit(ray, 0.001, math.floatMax(f64))) |rec| {

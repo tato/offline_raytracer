@@ -12,7 +12,7 @@ pub fn init(center: V3, radius: f64, mat: *const Material) Sphere {
     return .{ .center = center, .radius = radius, .mat = mat };
 }
 
-pub fn hit(sphere: Sphere, ray: Ray, t_min: f64, t_max: f64) ?HitRecord {
+pub fn hit(sphere: *const Sphere, ray: Ray, t_min: f64, t_max: f64) ?HitRecord {
     const oc = ray.origin.sub(sphere.center);
     const a = ray.direction.lengthSquared();
     const half_b = oc.dot(ray.direction);
