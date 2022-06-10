@@ -1,6 +1,6 @@
 const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
-const Material = @import("material.zig").Material;
+const Material = @import("Material.zig");
 
 const HitRecord = @This();
 

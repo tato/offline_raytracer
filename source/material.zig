@@ -4,25 +4,28 @@ const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
 const HitRecord = @import("HitRecord.zig");
 
-pub const Material = union(enum) {
+const Material = @This();
+const Storage = union(enum) {
     lambertian: Lambertian,
     metal: Metal,
-
-    pub fn initLambertian(albedo: V3) Material {
-        return .{ .lambertian = .{ .albedo = albedo } };
-    }
-
-    pub fn initMetal(albedo: V3) Material {
-        return .{ .metal = .{ .albedo = albedo } };
-    }
-
-    pub fn scatter(mat: Material, ray: Ray, rec: HitRecord, rand: std.rand.Random) ?ScatterResult {
-        return switch (mat) {
-            .lambertian => mat.lambertian.scatter(ray, rec, rand),
-            .metal => mat.metal.scatter(ray, rec, rand),
-        };
-    }
 };
+
+storage: Storage,
+
+pub fn initLambertian(albedo: V3) Material {
+    return .{ .storage = .{ .lambertian = .{ .albedo = albedo } } };
+}
+
+pub fn initMetal(albedo: V3) Material {
+    return .{ .storage = .{ .metal = .{ .albedo = albedo } } };
+}
+
+pub fn scatter(mat: Material, ray: Ray, rec: HitRecord, rand: std.rand.Random) ?ScatterResult {
+    return switch (mat.storage) {
+        .lambertian => mat.storage.lambertian.scatter(ray, rec, rand),
+        .metal => mat.storage.metal.scatter(ray, rec, rand),
+    };
+}
 
 const ScatterResult = struct {
     attenuation: V3,

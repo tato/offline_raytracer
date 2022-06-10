@@ -1,7 +1,7 @@
 const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
 const HitRecord = @import("HitRecord.zig");
-const Material = @import("material.zig").Material;
+const Material = @import("Material.zig");
 const Sphere = @This();
 
 center: V3,

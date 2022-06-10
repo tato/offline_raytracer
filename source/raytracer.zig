@@ -7,7 +7,7 @@ const rand = std.rand;
 const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
 const Camera = @import("Camera.zig");
-const Material = @import("material.zig").Material;
+const Material = @import("Material.zig");
 const Sphere = @import("Sphere.zig");
 const HittableList = @import("HittableList.zig");
 
