@@ -16,8 +16,8 @@ pub fn initLambertian(albedo: V3) Material {
     return .{ .storage = .{ .lambertian = .{ .albedo = albedo } } };
 }
 
-pub fn initMetal(albedo: V3) Material {
-    return .{ .storage = .{ .metal = .{ .albedo = albedo } } };
+pub fn initMetal(albedo: V3, fuzz: f64) Material {
+    return .{ .storage = .{ .metal = .{ .albedo = albedo, .fuzz = fuzz } } };
 }
 
 pub fn scatter(mat: Material, ray: Ray, rec: HitRecord, rand: std.rand.Random) ?ScatterResult {
@@ -51,10 +51,12 @@ const Lambertian = struct {
 
 const Metal = struct {
     albedo: V3,
+    fuzz: f64,
 
-    pub fn scatter(mat: Metal, ray: Ray, rec: HitRecord, _: std.rand.Random) ?ScatterResult {
+    pub fn scatter(mat: Metal, ray: Ray, rec: HitRecord, random: std.rand.Random) ?ScatterResult {
         const reflected = ray.direction.normalize().reflect(rec.normal);
-        const scattered = Ray.init(rec.point, reflected);
+        const fuzz_vector = V3.randomInUnitSphere(random).scale(mat.fuzz);
+        const scattered = Ray.init(rec.point, reflected.add(fuzz_vector));
         return if (scattered.direction.dot(rec.normal) > 0)
             ScatterResult{ .scattered = scattered, .attenuation = mat.albedo }
         else

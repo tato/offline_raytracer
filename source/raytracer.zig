@@ -26,8 +26,8 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
 
     const material_ground = Material.initLambertian(V3.init(0.8, 0.8, 0.0));
     const material_center = Material.initLambertian(V3.init(0.7, 0.3, 0.3));
-    const material_left = Material.initMetal(V3.init(0.8, 0.8, 0.8));
-    const material_right = Material.initMetal(V3.init(0.8, 0.6, 0.2));
+    const material_left = Material.initMetal(V3.init(0.8, 0.8, 0.8), 0.3);
+    const material_right = Material.initMetal(V3.init(0.8, 0.6, 0.2), 1.0);
 
     // zig fmt: off
     try world.add(Sphere.init(V3.init( 0.0, -100.5, -1), 100.0, &material_ground));
