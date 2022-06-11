@@ -1,5 +1,8 @@
 const std = @import("std");
 const fmt = std.fmt;
+
+const rand = @import("random.zig");
+
 const V3 = @This();
 
 x: f64,
@@ -83,32 +86,32 @@ pub fn colorFmt(v: V3) ColorFmt {
     return ColorFmt{ .v = v };
 }
 
-pub inline fn random(r: std.rand.Random) V3 {
-    return V3.init(r.float(f64), r.float(f64), r.float(f64));
+pub inline fn random() V3 {
+    return V3.init(rand.double(), rand.double(), rand.double());
 }
 
-pub inline fn randomRange(r: std.rand.Random, min: f64, max: f64) V3 {
+pub inline fn randomRange(min: f64, max: f64) V3 {
     return V3.init(
-        r.float(f64) * (max - min) + min,
-        r.float(f64) * (max - min) + min,
-        r.float(f64) * (max - min) + min,
+        rand.doubleRange(min, max),
+        rand.doubleRange(min, max),
+        rand.doubleRange(min, max),
     );
 }
 
-pub fn randomInUnitSphere(r: std.rand.Random) V3 {
+pub fn randomInUnitSphere() V3 {
     while (true) {
-        const p = V3.randomRange(r, -1, 1);
+        const p = V3.randomRange(-1, 1);
         if (p.lengthSquared() >= 1) continue;
         return p;
     }
 }
 
-pub inline fn randomUnitVector(r: std.rand.Random) V3 {
-    return V3.randomInUnitSphere(r).normalize();
+pub inline fn randomUnitVector() V3 {
+    return V3.randomInUnitSphere().normalize();
 }
 
-pub fn randomInHemisphere(r: std.rand.Random, normal: V3) V3 {
-    const in_unit_sphere = V3.randomInUnitSphere(r);
+pub fn randomInHemisphere(normal: V3) V3 {
+    const in_unit_sphere = V3.randomInUnitSphere();
     return if (in_unit_sphere.dot(normal) > 0.0)
         in_unit_sphere
     else

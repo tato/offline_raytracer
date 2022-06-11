@@ -2,8 +2,8 @@ const std = @import("std");
 const mem = std.mem;
 const heap = std.heap;
 const math = std.math;
-const rand = std.rand;
 
+const random = @import("random.zig");
 const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
 const Camera = @import("Camera.zig");
@@ -18,8 +18,6 @@ const image_height = @as(comptime_int, @as(comptime_float, image_width) / aspect
 const samples_per_pixel = 100;
 const max_depth = 50;
 
-var prng = rand.DefaultPrng.init(0xADD1C7);
-
 pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype) !void {
     // World
     // zig fmt: off
@@ -33,6 +31,7 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
     try world.add(Sphere.init(V3.init( 0.0, -100.5, -1), 100.0, &material_ground));
     try world.add(Sphere.init(V3.init( 0.0,    0.0, -1),   0.5, &material_center));
     try world.add(Sphere.init(V3.init(-1.0,    0.0, -1),   0.5, &material_left));
+    try world.add(Sphere.init(V3.init(-1.0,    0.0, -1), -0.45, &material_left));
     try world.add(Sphere.init(V3.init( 1.0,    0.0, -1),   0.5, &material_right));
 
     // const sr = @cos(math.pi / 4.0);
@@ -52,8 +51,6 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
         aspect_ratio,
     );
 
-    const random = prng.random();
-
     try output_ppm.print("P3\n{d} {d}\n255\n", .{ image_width, image_height });
     var j: u32 = 0;
     while (j < image_height) : (j += 1) {
@@ -65,8 +62,8 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
             var pixel_color = V3.init(0, 0, 0);
             var sample: u32 = 0;
             while (sample < samples_per_pixel) : (sample += 1) {
-                const u = (@intToFloat(f64, x) + random.float(f64)) / @as(f64, image_width - 1);
-                const v = (@intToFloat(f64, y) + random.float(f64)) / @as(f64, image_height - 1);
+                const u = (@intToFloat(f64, x) + random.double()) / @as(f64, image_width - 1);
+                const v = (@intToFloat(f64, y) + random.double()) / @as(f64, image_height - 1);
                 const r = cam.getRay(u, v);
                 pixel_color = pixel_color.add(rayColor(r, world, max_depth));
             }
@@ -80,7 +77,7 @@ fn rayColor(ray: Ray, world: anytype, depth: i32) V3 {
     if (depth <= 0) return V3.init(0, 0, 0);
 
     if (world.hit(ray, 0.001, math.floatMax(f64))) |rec| {
-        if (rec.mat.scatter(ray, rec, prng.random())) |scatter| {
+        if (rec.mat.scatter(ray, rec)) |scatter| {
             return scatter.attenuation.mul(rayColor(scatter.scattered, world, depth - 1));
         }
         return V3.init(0, 0, 0);

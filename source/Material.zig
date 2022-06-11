@@ -1,5 +1,6 @@
 const std = @import("std");
 
+const random = @import("random.zig");
 const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
 const HitRecord = @import("HitRecord.zig");
@@ -25,11 +26,11 @@ pub fn initDielectric(ir: f64) Material {
     return .{ .storage = .{ .dielectric = .{ .ir = ir } } };
 }
 
-pub fn scatter(mat: Material, ray: Ray, rec: HitRecord, rand: std.rand.Random) ?ScatterResult {
+pub fn scatter(mat: Material, ray: Ray, rec: HitRecord) ?ScatterResult {
     return switch (mat.storage) {
-        .lambertian => mat.storage.lambertian.scatter(ray, rec, rand),
-        .metal => mat.storage.metal.scatter(ray, rec, rand),
-        .dielectric => mat.storage.dielectric.scatter(ray, rec, rand),
+        .lambertian => mat.storage.lambertian.scatter(ray, rec),
+        .metal => mat.storage.metal.scatter(ray, rec),
+        .dielectric => mat.storage.dielectric.scatter(ray, rec),
     };
 }
 
@@ -41,8 +42,8 @@ const ScatterResult = struct {
 const Lambertian = struct {
     albedo: V3,
 
-    pub fn scatter(mat: Lambertian, _: Ray, rec: HitRecord, rand: std.rand.Random) ?ScatterResult {
-        var scatter_direction = rec.normal.add(V3.randomUnitVector(rand));
+    pub fn scatter(mat: Lambertian, _: Ray, rec: HitRecord) ?ScatterResult {
+        var scatter_direction = rec.normal.add(V3.randomUnitVector());
 
         if (scatter_direction.isNearZero()) {
             scatter_direction = rec.normal;
@@ -59,9 +60,9 @@ const Metal = struct {
     albedo: V3,
     fuzz: f64,
 
-    pub fn scatter(mat: Metal, ray: Ray, rec: HitRecord, random: std.rand.Random) ?ScatterResult {
+    pub fn scatter(mat: Metal, ray: Ray, rec: HitRecord) ?ScatterResult {
         const reflected = ray.direction.normalize().reflect(rec.normal);
-        const fuzz_vector = V3.randomInUnitSphere(random).scale(mat.fuzz);
+        const fuzz_vector = V3.randomInUnitSphere().scale(mat.fuzz);
         const scattered = Ray.init(rec.point, reflected.add(fuzz_vector));
         return if (scattered.direction.dot(rec.normal) > 0)
             ScatterResult{ .scattered = scattered, .attenuation = mat.albedo }
@@ -73,7 +74,7 @@ const Metal = struct {
 const Dielectric = struct {
     ir: f64,
 
-    pub fn scatter(mat: Dielectric, ray: Ray, rec: HitRecord, r: std.rand.Random) ?ScatterResult {
+    pub fn scatter(mat: Dielectric, ray: Ray, rec: HitRecord) ?ScatterResult {
         const attenuation = V3.init(1.0, 1.0, 1.0);
         const refraction_ratio = if (rec.front_face) 1.0 / mat.ir else mat.ir;
 
@@ -83,12 +84,12 @@ const Dielectric = struct {
         const sin_theta = @sqrt(1.0 - cos_theta * cos_theta);
 
         const cannot_refract = refraction_ratio * sin_theta > 1.0;
-        const should_reflect = cannot_refract or reflectance(cos_theta, refraction_ratio) > r.float(f64);
 
-        const direction = if (should_reflect)
-            unit_direction.reflect(rec.normal)
+        var direction: V3 = undefined;
+        if (cannot_refract or reflectance(cos_theta, refraction_ratio) > random.double())
+            direction = unit_direction.reflect(rec.normal)
         else
-            unit_direction.refract(rec.normal, refraction_ratio);
+            direction = unit_direction.refract(rec.normal, refraction_ratio);
 
         return ScatterResult{
             .attenuation = attenuation,
@@ -100,6 +101,6 @@ const Dielectric = struct {
         // Schlick approximation
         var r0 = (1 - ref_idx) / (1 + ref_idx);
         r0 = r0 * r0;
-        return r0 + (1 - r0) * std.math.pow(f64, (1 - cosine), 5);
+        return r0 + (1 - r0) * std.math.pow(f64, 1 - cosine, 5);
     }
 };
