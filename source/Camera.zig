@@ -1,6 +1,7 @@
+const math = @import("std").math;
+
 const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
-const raytracer = @import("raytracer.zig");
 
 const Camera = @This();
 origin: V3,
@@ -8,26 +9,33 @@ lower_left_corner: V3,
 horizontal: V3,
 vertical: V3,
 
-pub fn init() Camera {
-    const viewport_height = 2.0;
-    const viewport_width = raytracer.aspect_ratio * viewport_height;
-    const focal_length = 1.0;
+/// vfov is in degrees
+pub fn init(lookfrom: V3, lookat: V3, vup: V3, vfov: f64, aspect_ratio: f64) Camera {
+    const theta = vfov * math.pi / 180.0;
+    const h = @tan(theta / 2);
+    const viewport_height = 2.0 * h;
+    const viewport_width = aspect_ratio * viewport_height;
 
-    var camera: Camera = undefined;
-    camera.origin = V3.init(0, 0, 0);
-    camera.horizontal = V3.init(viewport_width, 0, 0);
-    camera.vertical = V3.init(0, viewport_height, 0);
-    camera.lower_left_corner = camera.origin
-        .sub(camera.horizontal.divScale(2))
-        .sub(camera.vertical.divScale(2))
-        .sub(V3.init(0, 0, focal_length));
+    const w = lookfrom.sub(lookat).normalize();
+    const u = vup.cross(w).normalize();
+    const v = w.cross(u);
+
+    const hor = u.scale(viewport_width);
+    const ver = v.scale(viewport_height);
+
+    var camera = .{
+        .origin = lookfrom,
+        .horizontal = hor,
+        .vertical = ver,
+        .lower_left_corner = lookfrom.sub(hor.divScale(2)).sub(ver.divScale(2)).sub(w),
+    };
     return camera;
 }
 
-pub fn getRay(camera: Camera, u: f64, v: f64) Ray {
+pub fn getRay(camera: Camera, s: f64, t: f64) Ray {
     const direction = camera.lower_left_corner
-        .add(camera.horizontal.scale(u))
-        .add(camera.vertical.scale(v))
+        .add(camera.horizontal.scale(s))
+        .add(camera.vertical.scale(t))
         .sub(camera.origin);
     return Ray.init(camera.origin, direction);
 }

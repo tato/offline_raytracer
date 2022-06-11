@@ -12,7 +12,7 @@ const Sphere = @import("Sphere.zig");
 const HittableList = @import("HittableList.zig");
 
 // Image
-pub const aspect_ratio = 16.0 / 9.0;
+const aspect_ratio = 16.0 / 9.0;
 const image_width = 400;
 const image_height = @as(comptime_int, @as(comptime_float, image_width) / aspect_ratio);
 const samples_per_pixel = 100;
@@ -34,10 +34,23 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
     try world.add(Sphere.init(V3.init( 0.0,    0.0, -1),   0.5, &material_center));
     try world.add(Sphere.init(V3.init(-1.0,    0.0, -1),   0.5, &material_left));
     try world.add(Sphere.init(V3.init( 1.0,    0.0, -1),   0.5, &material_right));
+
+    // const sr = @cos(math.pi / 4.0);
+
+    // const material_left  = Material.initLambertian(V3.init(0, 0, 1));
+    // const material_right = Material.initLambertian(V3.init(1, 0, 0));
+
+    // try world.add(Sphere.init(V3.init(-sr, 0, -1), sr, &material_left));
+    // try world.add(Sphere.init(V3.init( sr, 0, -1), sr, &material_right));
     // zig fmt: on
 
-    // Camera
-    const cam: Camera = Camera.init();
+    const cam = Camera.init(
+        V3.init(-2, 2, 1),
+        V3.init(0, 0, -1),
+        V3.init(0, 1, 0),
+        20.0,
+        aspect_ratio,
+    );
 
     const random = prng.random();
 
