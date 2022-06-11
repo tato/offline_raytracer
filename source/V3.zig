@@ -118,6 +118,14 @@ pub fn randomInHemisphere(normal: V3) V3 {
         in_unit_sphere.neg();
 }
 
+pub fn randomInUnitDisk() V3 {
+    while (true) {
+        const p = V3.init(rand.doubleRange(-1, 1), rand.doubleRange(-1, 1), 0);
+        if (p.lengthSquared() >= 1) continue;
+        return p;
+    }
+}
+
 pub inline fn isNearZero(v: V3) bool {
     const s = 1e-8;
     return @fabs(v.x) < s and @fabs(v.y) < s and @fabs(v.z) < s;

@@ -43,13 +43,14 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
     // try world.add(Sphere.init(V3.init( sr, 0, -1), sr, &material_right));
     // zig fmt: on
 
-    const cam = Camera.init(
-        V3.init(-2, 2, 1),
-        V3.init(0, 0, -1),
-        V3.init(0, 1, 0),
-        20.0,
-        aspect_ratio,
-    );
+    const lookfrom = V3.init(3, 3, 2);
+    const lookat = V3.init(0, 0, -1);
+    const vup = V3.init(0, 1, 0);
+    const vfov = 20.0;
+    const dist_to_focus = lookfrom.sub(lookat).length();
+    const aperture = 2.0;
+
+    const cam = Camera.init(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus);
 
     try output_ppm.print("P3\n{d} {d}\n255\n", .{ image_width, image_height });
     var j: u32 = 0;
