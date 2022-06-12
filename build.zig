@@ -9,6 +9,13 @@ pub fn build(b: *std.build.Builder) void {
     exe.setBuildMode(mode);
     exe.install();
 
+    const ztracy = @import("ztracy/build.zig");
+    const ztracy_enable = b.option(bool, "tracy", "Enable Tracy profiler") orelse false;
+    const ztracy_options = ztracy.BuildOptionsStep.init(b, .{ .enable_ztracy = ztracy_enable });
+    const ztracy_pkg = ztracy.getPkg(&.{ztracy_options.getPkg()});
+    exe.addPackage(ztracy_pkg);
+    ztracy.link(exe, ztracy_options);
+
     const run_cmd = exe.run();
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
