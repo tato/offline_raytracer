@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const ztracy = @import("ztracy");
+
 const random = @import("random.zig");
 const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
@@ -43,6 +45,9 @@ const Lambertian = struct {
     albedo: V3,
 
     pub fn scatter(mat: Lambertian, _: Ray, rec: HitRecord) ?ScatterResult {
+        const trace = ztracy.Zone(@src());
+        defer trace.End();
+
         var scatter_direction = rec.normal.add(V3.randomUnitVector());
 
         if (scatter_direction.isNearZero()) {
@@ -61,6 +66,9 @@ const Metal = struct {
     fuzz: f64,
 
     pub fn scatter(mat: Metal, ray: Ray, rec: HitRecord) ?ScatterResult {
+        const trace = ztracy.Zone(@src());
+        defer trace.End();
+
         const reflected = ray.direction.normalize().reflect(rec.normal);
         const fuzz_vector = V3.randomInUnitSphere().scale(mat.fuzz);
         const scattered = Ray.init(rec.point, reflected.add(fuzz_vector));
@@ -75,6 +83,9 @@ const Dielectric = struct {
     ir: f64,
 
     pub fn scatter(mat: Dielectric, ray: Ray, rec: HitRecord) ?ScatterResult {
+        const trace = ztracy.Zone(@src());
+        defer trace.End();
+
         const attenuation = V3.init(1.0, 1.0, 1.0);
         const refraction_ratio = if (rec.front_face) 1.0 / mat.ir else mat.ir;
 

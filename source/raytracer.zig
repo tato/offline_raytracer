@@ -3,6 +3,8 @@ const mem = std.mem;
 const heap = std.heap;
 const math = std.math;
 
+const ztracy = @import("ztracy");
+
 const random = @import("random.zig");
 const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
@@ -13,13 +15,15 @@ const HittableList = @import("HittableList.zig");
 
 // Image
 const aspect_ratio = 16.0 / 9.0;
-const image_width = 1366;
-//const image_height = @as(comptime_int, @as(comptime_float, image_width) / aspect_ratio);
-const image_height = 768;
+const image_width = 400;
+const image_height = @as(comptime_int, @as(comptime_float, image_width) / aspect_ratio);
 const samples_per_pixel = 100;
 const max_depth = 50;
 
 pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype) !void {
+    const trace = ztracy.Zone(@src());
+    defer trace.End();
+
     const world = try randomScene(allocator);
 
     const lookfrom = V3.init(13, 2, 3);
@@ -34,14 +38,23 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
     try output_ppm.print("P3\n{d} {d}\n255\n", .{ image_width, image_height });
     var j: u32 = 0;
     while (j < image_height) : (j += 1) {
+        const scanline_trace = ztracy.ZoneN(@src(), "Scanline");
+        defer scanline_trace.End();
+
         const y = image_height - 1 - j;
         try progress.print("\rScanlines remaining: {d:3}", .{y});
 
         var x: u32 = 0;
         while (x < image_width) : (x += 1) {
+            const pixel_trace = ztracy.ZoneN(@src(), "Pixel");
+            defer pixel_trace.End();
+
             var pixel_color = V3.init(0, 0, 0);
             var sample: u32 = 0;
             while (sample < samples_per_pixel) : (sample += 1) {
+                const sample_trace = ztracy.ZoneN(@src(), "Sample");
+                defer sample_trace.End();
+
                 const u = (@intToFloat(f64, x) + random.double()) / @as(f64, image_width - 1);
                 const v = (@intToFloat(f64, y) + random.double()) / @as(f64, image_height - 1);
                 const r = cam.getRay(u, v);
@@ -54,6 +67,9 @@ pub fn raytrace(allocator: mem.Allocator, output_ppm: anytype, progress: anytype
 }
 
 fn rayColor(ray: Ray, world: anytype, depth: i32) V3 {
+    const trace = ztracy.Zone(@src());
+    defer trace.End();
+
     if (depth <= 0) return V3.init(0, 0, 0);
 
     if (world.hit(ray, 0.001, math.floatMax(f64))) |rec| {
@@ -72,6 +88,9 @@ fn rayColor(ray: Ray, world: anytype, depth: i32) V3 {
 }
 
 fn writeColor(output_ppm: anytype, pixel_color: V3, samples: i64) !void {
+    const trace = ztracy.Zone(@src());
+    defer trace.End();
+
     const scale = 1.0 / @intToFloat(f64, samples);
     const r = @sqrt(pixel_color.x * scale);
     const g = @sqrt(pixel_color.y * scale);
@@ -85,6 +104,9 @@ fn writeColor(output_ppm: anytype, pixel_color: V3, samples: i64) !void {
 }
 
 fn randomScene(allocator: mem.Allocator) !HittableList {
+    const trace = ztracy.Zone(@src());
+    defer trace.End();
+
     var world = HittableList.init(allocator);
 
     const ground_material = try allocator.create(Material);

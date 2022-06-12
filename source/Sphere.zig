@@ -1,3 +1,5 @@
+const ztracy = @import("ztracy");
+
 const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
 const HitRecord = @import("HitRecord.zig");
@@ -13,6 +15,9 @@ pub fn init(center: V3, radius: f64, mat: *const Material) Sphere {
 }
 
 pub fn hit(sphere: *const Sphere, ray: Ray, t_min: f64, t_max: f64) ?HitRecord {
+    const trace = ztracy.Zone(@src());
+    defer trace.End();
+
     const oc = ray.origin.sub(sphere.center);
     const a = ray.direction.lengthSquared();
     const half_b = oc.dot(ray.direction);

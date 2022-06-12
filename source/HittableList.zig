@@ -1,6 +1,8 @@
 const std = @import("std");
 const mem = std.mem;
 
+const ztracy = @import("ztracy");
+
 const Ray = @import("Ray.zig");
 const HitRecord = @import("HitRecord.zig");
 
@@ -22,6 +24,9 @@ pub inline fn clear(list: *HittableList) void {
 }
 
 pub inline fn add(list: *HittableList, object: anytype) !void {
+    const trace = ztracy.Zone(@src());
+    defer trace.End();
+
     const T = @TypeOf(object);
     const ptr = try list.allocator.alignedAlloc(u8, @alignOf(T), @sizeOf(T));
     errdefer list.allocator.free(ptr);
@@ -31,6 +36,9 @@ pub inline fn add(list: *HittableList, object: anytype) !void {
 }
 
 pub fn hit(list: *const HittableList, ray: Ray, t_min: f64, t_max: f64) ?HitRecord {
+    const trace = ztracy.Zone(@src());
+    defer trace.End();
+
     var closest_so_far = t_max;
     var result: ?HitRecord = null;
 

@@ -1,5 +1,7 @@
 const math = @import("std").math;
 
+const ztracy = @import("ztracy");
+
 const V3 = @import("V3.zig");
 const Ray = @import("Ray.zig");
 
@@ -52,6 +54,9 @@ pub fn init(
 }
 
 pub fn getRay(cam: Camera, s: f64, t: f64) Ray {
+    const trace = ztracy.Zone(@src());
+    defer trace.End();
+
     const rd = V3.randomInUnitDisk().scale(cam.lens_radius);
     const offset = cam.u.scale(rd.x)
         .add(cam.v.scale(rd.y));
